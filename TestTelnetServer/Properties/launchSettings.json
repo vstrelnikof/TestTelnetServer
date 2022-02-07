@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "TestTelnetServer": {
+      "commandName": "Project",
+      "commandLineArgs": "32202"
+    }
+  }
+}
