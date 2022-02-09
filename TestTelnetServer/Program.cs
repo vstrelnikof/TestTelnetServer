@@ -33,7 +33,7 @@ namespace TestTelnetServer
 
 			service.Start(settings);
 
-			Console.WriteLine("Telnet Service is running.\r\nPress enter to stop application.");
+			Console.WriteLine("Telnet Service is running.\r\nPress any key to stop application.");
 			Console.ReadKey();
 
 			service.Stop();

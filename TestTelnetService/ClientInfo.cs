@@ -1,12 +1,18 @@
-﻿using System.Net.Sockets;
+﻿using System;
+using System.Net.Sockets;
 
 namespace TestService.TelnetServer
 {
 	public sealed class ClientInfo
 	{
-		private readonly string _clientIP;
-		private readonly Socket _clientSocket;
-		private readonly byte[] _buffer;
+		readonly Guid _clientID = Guid.NewGuid();
+		readonly string _clientIP;
+		readonly Socket _clientSocket;
+		readonly byte[] _buffer;
+
+		public Guid ClientID {
+			get => _clientID;
+		}
 
 		public string ClientIP {
 			get => _clientIP;

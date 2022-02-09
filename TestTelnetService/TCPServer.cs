@@ -7,8 +7,8 @@ namespace TestService.TelnetServer
 {
 	public sealed class TCPServer: ITCPServer
 	{
-		private Socket? _serverSocket;
-		private List<ClientInfo>? _clients;
+		Socket? _serverSocket;
+		List<ClientInfo>? _clients;
 
 		public List<ClientInfo>? Clients {
 			get => _clients;
@@ -64,7 +64,7 @@ namespace TestService.TelnetServer
 			}
 		}
 
-		private void _acceptCallback(IAsyncResult ar) {
+		void _acceptCallback(IAsyncResult ar) {
 			try {
 				if (_serverSocket == null) {
 					return;
@@ -80,12 +80,12 @@ namespace TestService.TelnetServer
 				var clientInfo = new ClientInfo(remoteIpEndPoint.Address.ToString(), clientSocket, new byte[ReadBufferSize]);
 
 				ClientConnected?.Invoke(this, clientInfo);
-				clientSocket.BeginReceive(clientInfo.Buffer, 0, ReadBufferSize, 0, new AsyncCallback(_readCallback), clientInfo);                
+				clientSocket.BeginReceive(clientInfo.Buffer, 0, ReadBufferSize, 0, new AsyncCallback(_readCallback), clientInfo);
 				_serverSocket.BeginAccept(new AsyncCallback(_acceptCallback), _serverSocket);
 			} catch { }
 		}
 
-		private void _readCallback(IAsyncResult ar)
+		void _readCallback(IAsyncResult ar)
 		{
 			try {
 				var clientInfo = (ClientInfo)ar.AsyncState;

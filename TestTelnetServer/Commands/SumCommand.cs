@@ -7,7 +7,7 @@ namespace TestTelnetServer.Commands
 {
 	class SumCommand: ITelnetCommand
 	{
-		private readonly ConcurrentDictionary<ConnectedClient, int> _clientSums;
+		readonly ConcurrentDictionary<ConnectedClient, int> _clientSums;
 
 		public string CommandName {
 			get => "sum";

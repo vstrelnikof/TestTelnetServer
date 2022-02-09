@@ -12,15 +12,15 @@ namespace TestService.TelnetServer
 {
 	public partial class TelnetService: ITelnetService {
 		static readonly Regex TokenizerRegex = new Regex("(\"[^\"]+\")|([^ \":]+)|(:)", RegexOptions.Compiled);
-		private bool _isRunning;
-		private readonly ITCPServer _TCPServer;
-		private Thread? _thrCommandProcessor;
-		private List<ITelnetCommand>? _commands;
-		private readonly ConcurrentDictionary<string, ConnectedClient> _clients =
-			new ConcurrentDictionary<string, ConnectedClient>();
-		private readonly ConcurrentQueue<ReceivedCommandItem> _receivedCommands =
+		bool _isRunning;
+		readonly ITCPServer _TCPServer;
+		Thread? _thrCommandProcessor;
+		List<ITelnetCommand>? _commands;
+		readonly ConcurrentDictionary<Guid, ConnectedClient> _clients =
+			new ConcurrentDictionary<Guid, ConnectedClient>();
+		readonly ConcurrentQueue<ReceivedCommandItem> _receivedCommands =
 			new ConcurrentQueue<ReceivedCommandItem>();
-		private TelnetServiceSettings _settings = new TelnetServiceSettings();
+		TelnetServiceSettings _settings = new TelnetServiceSettings();
 
 		public bool IsRunning {
 			get => _isRunning;
@@ -95,7 +95,7 @@ namespace TestService.TelnetServer
 			_clearClientsAndReceivedCommands();
 		}
 
-		private void _buildCommandsCatalog(ITelnetCommand[] customCommands) {
+		void _buildCommandsCatalog(ITelnetCommand[] customCommands) {
 			_commands = new List<ITelnetCommand>();
 
 			var builtInCommands = Assembly.GetAssembly(typeof(ITelnetCommand)).GetTypes()
@@ -110,7 +110,7 @@ namespace TestService.TelnetServer
 			}
 		} 
 				
-		private void _addCommandToCatalog(ITelnetCommand command) {
+		void _addCommandToCatalog(ITelnetCommand command) {
 			if (_commands != null && !_commands.Contains(command)) {
 				_commands.Add(command);
 			}
@@ -123,7 +123,7 @@ namespace TestService.TelnetServer
 			_clients.Clear();
 		}
 
-		private void _commandProcessorThread() {
+		void _commandProcessorThread() {
 			while (_isRunning) {
 				if (_receivedCommands.Count == 0) {
 					Thread.Sleep(100);
@@ -140,7 +140,7 @@ namespace TestService.TelnetServer
 			}
 		}
 
-		private void _processCommandItem(ReceivedCommandItem commandItem) {
+		void _processCommandItem(ReceivedCommandItem commandItem) {
 			bool parseFailed = false;
 			try {
 				_parseCommandLine(commandItem);
@@ -162,7 +162,7 @@ namespace TestService.TelnetServer
 			_sendCommandResult(commandItem);
 		}
 
-		private void _parseCommandLine(ReceivedCommandItem commandItem) {
+		void _parseCommandLine(ReceivedCommandItem commandItem) {
 			var commandStack = new Stack<string>();
 			var parameters = new Dictionary<string, string?>();
 			Match regExMatch = TokenizerRegex.Match(commandItem.InputCommand);
@@ -198,7 +198,7 @@ namespace TestService.TelnetServer
 			commandItem.Parameters = parameters;
 		}
 
-		private void _executeCommand(ReceivedCommandItem commandItem) {
+		void _executeCommand(ReceivedCommandItem commandItem) {
 			if (commandItem.CommandName == "exit") {
 				_processExitCommand(commandItem);
 				return;
@@ -226,7 +226,7 @@ namespace TestService.TelnetServer
 			}
 		}
 
-		private void _sendCommandResult(ReceivedCommandItem commandItem) {
+		void _sendCommandResult(ReceivedCommandItem commandItem) {
 			var strResult = new StringBuilder(commandItem.IsSucceed ? "OK:" : "FAILED:");
 			if (!string.IsNullOrEmpty(commandItem.ResponseMessage)) {
 				strResult.AppendFormat("\r\n{0}", commandItem.ResponseMessage);
@@ -241,7 +241,7 @@ namespace TestService.TelnetServer
 			} catch { }
 		}
 
-		private void _processExitCommand(ReceivedCommandItem commandItem) {
+		void _processExitCommand(ReceivedCommandItem commandItem) {
 			if (commandItem == null) {
 				return;
 			}
@@ -255,28 +255,28 @@ namespace TestService.TelnetServer
 			}
 		}
 
-		private void _TCPServerClientConnected(ITCPServer server, ClientInfo client) {
-			ConnectedClient _connectedClient = new ConnectedClient {
+		void _TCPServerClientConnected(ITCPServer server, ClientInfo client) {
+			var _connectedClient = new ConnectedClient {
 				Client = client,
 				CommandBuffer = null,
 				TextEncoder = Encoding.GetEncoding(_settings.Charset)
 			};
-			_clients.TryAdd(client.ClientIP, _connectedClient);
+			_clients.TryAdd(client.ClientID, _connectedClient);
 
-			Console.WriteLine($"New client connected: {client.ClientIP}");
+			Console.WriteLine($"New client connected: {client.ClientIP} [{client.ClientID}]");
 
 			_connectedClient.Client.ClientSocket.Send(_connectedClient.TextEncoder.GetBytes(" \r\n" + PromptText));
 		}
 
-		private void _TCPServerClientDisconnected(ITCPServer server, ClientInfo client) {
-			if (_clients.TryRemove(client.ClientIP, out _)) {
+		void _TCPServerClientDisconnected(ITCPServer server, ClientInfo client) {
+			if (_clients.TryRemove(client.ClientID, out _)) {
 				Console.WriteLine($"Client disconnected: {client.ClientIP}");
 			}
 			_commands?.ForEach(c => c.ClearCache(client));
 		}
 
-		private void _TCPServerDataReceived(ITCPServer server, ClientInfo client, byte[] data) {
-			if (!_clients.TryGetValue(client.ClientIP, out ConnectedClient connectedClient)) {
+		void _TCPServerDataReceived(ITCPServer server, ClientInfo client, byte[] data) {
+			if (!_clients.TryGetValue(client.ClientID, out ConnectedClient connectedClient)) {
 				return;
 			}
 

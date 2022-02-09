@@ -7,7 +7,7 @@ namespace TestTelnetServer.Commands
 {
 	class ListCommand : ITelnetCommand
 	{
-		private readonly ConcurrentDictionary<ConnectedClient, int> _clientSums;
+		readonly ConcurrentDictionary<ConnectedClient, int> _clientSums;
 
 		public string CommandName {
 			get => "list";
@@ -33,7 +33,7 @@ namespace TestTelnetServer.Commands
 			}
 			var sb = new StringBuilder();
 			foreach (var item in _clientSums) {
-				sb.AppendFormat("{0}: {1}\r\n", item.Key.Client.ClientIP, item.Value);
+				sb.AppendFormat("{0} [{1}]: {2}\r\n", item.Key.Client.ClientIP, item.Key.Client.ClientID, item.Value);
 			}
 			return TelnetCommandResult.Success(sb.ToString());
 		}

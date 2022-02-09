@@ -4,7 +4,7 @@ using TestService.TelnetServer;
 namespace TestTelnetServer.Commands
 {
 	class EchoCommand : ITelnetCommand {
-		private readonly CommandParameter[] _parameters = new CommandParameter[] {
+		readonly CommandParameter[] _parameters = new CommandParameter[] {
 			new CommandParameter("message", true, "Your message.")
 		};
 
